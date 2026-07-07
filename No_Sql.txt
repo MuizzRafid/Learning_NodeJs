@@ -1,0 +1,143 @@
+$inc
+$rename
+$set
+$unset
+
+$addToSet= add distinct element to an array
+
+$pop= removes the first or last element of an array
+
+$pull: removes all elements from an array that match the query
+
+$push: adds an element to an array
+
+db.posts.aggregate([
+{
+    $match: {likes:{$gt:1}}
+},
+{
+    $group: {_id:"$category", totalLikes:{$sum:"$likes"}}
+}
+
+])
+
+db.listingsAndReviews.aggregate(
+    [{$group:{ _id:"$property_type"}}]
+)
+
+db.movies.aggregate([{$limit:1}])
+
+db.restaurants.aggregate([{
+    $project:{
+        "name":1,
+        "cuisine":1,
+        "address":1
+    }
+},
+{
+    $limit:5
+}
+])
+
+db.listingsAndReviews.aggregate([
+{$match: {property_type:"House"}},
+{$limit:2},
+{$project:{
+    "name":1,
+    "bedrooms":1,
+    "price":1
+}}
+
+])
+
+db.restaurants.aggregate([
+    {
+        $addFields:{
+            avgGrade:{$avg: "grades.score"}
+        }
+    },
+    {
+        $project:{
+            "name":1,
+            "avgGrade":1
+        }
+    },
+    {
+        $limit:5
+    }
+])
+
+db.restaurants.aggregate([
+    {
+        $match:{"cuisine":"chinese"}
+    },
+    {
+        $count:"totalChinese"
+    }
+])
+db.comments.aggregate([
+    {
+        $lookup:{
+            from:"movies",
+            localField: "movie_id",
+            foreignField:"_id"
+            as: "movie_details"
+        }
+    },
+    {
+        $limit:1
+    }
+])
+
+db.listingsAndReviews.aggregate([
+    {
+        $group:{
+            _id:"property_type",
+            properties:{
+                $push:{
+                    name: "$name",
+                    accommodates:"$accommodates",
+                    price:"$price"
+                }
+            }
+        },
+        {
+            $out:"properties_by_type"
+        }
+    }
+])
+
+db.createCollection("posts",{
+    validator:{
+        $jsonSchema:{
+            bsonType:"object",
+            required: ["title","body"],
+            properties:{
+                title:{
+                    bsonType:"string",
+                    description:"title of the post required"
+                },
+                body:{
+                    bsonType:"string",
+                    description:"Body of post -required"
+                },
+                category:{
+                    bsonType:"string",
+                    description:"Category of post -optional"
+                },
+                likes:{
+                    bsonType:"int",
+                    description:"post like count, Must be an integer optional"
+                },
+                tags:{
+                    bsonType:["string]
+                    description:"Must be an array of strings-optional"
+                },
+                date:{
+                    bsonType:"date",
+                    description:"Must be a date- optional"
+                }
+            }
+        }
+    }
+})
